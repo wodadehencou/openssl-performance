@@ -46,23 +46,30 @@ void ec_test(EC_GROUP *group) {
     double b;
 
     EC_POINT *r_point;
+    EC_POINT *r2_point;
     BIGNUM *p_value;
+    BIGNUM *p2_value;
     BIGNUM *x;
     BIGNUM *y;
     //   BN_CTX *ctx = BN_CTX_new();
     BN_CTX *ctx = NULL;
 
     p_value = BN_new();
+    p2_value = BN_new();
     x = BN_new();
     y = BN_new();
     r_point = EC_POINT_new(group);
+    r2_point = EC_POINT_new(group);
 
     BIGNUM *order;
     order = BN_new();
     EC_GROUP_get_order(group, order, ctx);
     BN_rand_range(p_value, order);
+    BN_rand_range(p2_value, order);
     EC_POINT_mul(group, r_point, p_value, NULL, NULL, ctx);
+    EC_POINT_mul(group, r2_point, p2_value, NULL, NULL, ctx);
     EC_POINT_get_affine_coordinates_GFp(group, r_point, x, y, ctx);
+    EC_POINT_get_affine_coordinates_GFp(group, r2_point, x, y, ctx);
     // EC_POINT_make_affine(group, r_point, ctx);
     // EC_POINT_point2bn(group, r_point, POINT_CONVERSION_UNCOMPRESSED, x, ctx);
 
@@ -88,6 +95,19 @@ void ec_test(EC_GROUP *group) {
     }
     total = gettimedouble() - begin;
     printf("base_point_mul:");
+    print_number(1e6 * (total / total_cycles));
+    printf("us\n");
+
+    begin = gettimedouble();
+    for (b = 0; b < total_cycles; b++) {
+        // EC_POINT_point2bn(group, r_point, POINT_CONVERSION_UNCOMPRESSED, x,
+        // ctx);
+        EC_POINT_add(group, r_point, r_point, r2_point, ctx);
+        EC_POINT_get_affine_coordinates_GFp(group, r_point, x, y, ctx);
+        // EC_POINT_make_affine(group, r_point, ctx);
+    }
+    total = gettimedouble() - begin;
+    printf("point_add:");
     print_number(1e6 * (total / total_cycles));
     printf("us\n");
 
